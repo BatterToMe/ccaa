@@ -23,15 +23,20 @@ fi
 
 #安装前的检查
 function check(){
+	read -p "设置下载路径（请填写绝对地址，默认/etc/ccaa）:" setuppath
+	if [ -z "${setuppath}" ]
+	then
+		setuppath="/etc/ccaa"
+	fi
 	echo '-------------------------------------------------------------'
-	if [ -e "/etc/ccaa" ]
-        then
-        echo 'CCAA已经安装，若需要重新安装，请先卸载再安装！'
-        echo '-------------------------------------------------------------'
-        exit
+	if [ -e "${setuppath}" ]
+		then
+		echo 'CCAA已经安装，若需要重新安装，请先卸载再安装！'
+		echo '-------------------------------------------------------------'
+		exit
 	else
-	        echo '检测通过，即将开始安装。'
-	        echo '-------------------------------------------------------------'
+			echo '检测通过，即将开始安装。'
+			echo '-------------------------------------------------------------'
 	fi
 }
 
@@ -81,11 +86,11 @@ function dealconf(){
 	#解压
 	unzip master.zip
 	#复制CCAA核心目录
-	mv ccaa-master/ccaa_dir /etc/ccaa
+	mv ccaa-master/ccaa_dir ${setuppath}
 	#创建aria2日志文件
 	touch /var/log/aria2.log
 	#upbt增加执行权限
-	chmod +x /etc/ccaa/upbt.sh
+	chmod +x ${setuppath}/upbt.sh
 	chmod +x ccaa-master/ccaa
 	cp ccaa-master/ccaa /usr/sbin
 	cd
@@ -170,15 +175,15 @@ function setting(){
 	
 	#执行替换操作
 	mkdir -p ${downpath}
-	sed -i "s%dir=%dir=${downpath}%g" /etc/ccaa/aria2.conf
-	sed -i "s/rpc-secret=/rpc-secret=${secret}/g" /etc/ccaa/aria2.conf
+	sed -i "s%dir=%dir=${downpath}%g" ${setuppath}/aria2.conf
+	sed -i "s/rpc-secret=/rpc-secret=${secret}/g" ${setuppath}/aria2.conf
 	#替换filebrowser读取路径
-	sed -i "s%ccaaDown%${downpath}%g" /etc/ccaa/config.json
+	sed -i "s%ccaaDown%${downpath}%g" ${setuppath}/config.json
 	#替换AriaNg服务器链接
-	sed -i "s/server_ip/${osip}/g" /etc/ccaa/index.html
+	sed -i "s/server_ip/${osip}/g" ${setuppath}/index.html
 	
 	#更新tracker
-	bash /etc/ccaa/upbt.sh
+	bash ${setuppath}/upbt.sh
 	
 	#安装AriaNg
 	wget ${ccaa_web_url}
@@ -187,11 +192,11 @@ function setting(){
 	chmod +x /usr/sbin/ccaa_web
 
 	#启动服务
-	nohup aria2c --conf-path=/etc/ccaa/aria2.conf > /var/log/aria2.log 2>&1 &
-	#nohup caddy -conf="/etc/ccaa/caddy.conf" > /etc/ccaa/caddy.log 2>&1 &
+	nohup aria2c --conf-path=${setuppath}/aria2.conf > /var/log/aria2.log 2>&1 &
+	#nohup caddy -conf="${setuppath}/caddy.conf" > ${setuppath}/caddy.log 2>&1 &
 	nohup /usr/sbin/ccaa_web > /var/log/ccaa_web.log 2>&1 &
 	#运行filebrowser
-	nohup filebrowser -c /etc/ccaa/config.json > /var/log/fbrun.log 2>&1 &
+	nohup filebrowser -c ${setuppath}/config.json > /var/log/fbrun.log 2>&1 &
 
 
 	echo '-------------------------------------------------------------'
@@ -225,24 +230,24 @@ echo "3) 更新bt-tracker"
 echo "q) 退出！"
 read -p ":" istype
 case $istype in
-    1) 
-    	check
-    	setout
-    	chk_firewall
-    	install_aria2 && \
-    	install_file_browser && \
-    	dealconf && \
-    	setting && \
-    	cleanup
-    ;;
-    2) 
-    	uninstall
-    ;;
-    3) 
-    	bash /etc/ccaa/upbt.sh
-    ;;
-    q) 
-    	exit
-    ;;
-    *) echo '参数错误！'
+	1) 
+		check
+		setout
+		chk_firewall
+		install_aria2 && \
+		install_file_browser && \
+		dealconf && \
+		setting && \
+		cleanup
+	;;
+	2) 
+		uninstall
+	;;
+	3) 
+		bash ${setuppath}/upbt.sh
+	;;
+	q) 
+		exit
+	;;
+	*) echo '参数错误！'
 esac
